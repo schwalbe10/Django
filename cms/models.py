@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
 from django.db import models
 
-class Book(models.Model):
-    '''書籍'''
-    name = models.CharField(u'書籍名', max_length=255)
-    publisher = models.CharField(u'出版社', max_length=255, blank=True)
-    page = models.IntegerField(u'ページ数', blank=True, default=0)
+class Record(models.Model):
+    album = models.CharField(u'Jazz Album', max_length=255)
+    artist = models.CharField(u'Artist', max_length=255, blank=True)
+    year = models.IntegerField(u'Year', max_length=4, blank=True)
     
     def __str__(self):    # Python2: def __unicode__(self):
-        return self.name
+        return self.album
     
-class Impression(models.Model):
-    '''感想'''
-    book = models.ForeignKey(Book, verbose_name=u'書籍', related_name='impressions')
-    comment = models.TextField(u'コメント', blank=True)
+class Review(models.Model):
+    record = models.ForeignKey(Record, verbose_name=u'Album', related_name='reviews')
+    comment = models.TextField(u'Comment', blank=True)
     
     def __str__(self):    # Python2: def __unicode__(self):
         return self.comment

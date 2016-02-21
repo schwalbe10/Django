@@ -1,94 +1,75 @@
-# -*- coding: utf-8 -*-
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.views.generic.list import ListView
-from cms.forms import BookForm, ImpressionForm
-from cms.models import Book, Impression
+from cms.forms import RecordForm, ReviewForm
+from cms.models import Record, Review
 
-def book_list(request):
-    '''書籍の一覧'''
-#    return HttpResponse(u'書籍の一覧')
-    books = Book.objects.all().order_by('id')
-    return render_to_response('cms/book_list.html',   # 使用するテンプレート
-                              {'books': books},       # テンプレートに渡すデータ
-                              context_instance=RequestContext(request))  # その他標準のコンテキスト
+def record_list(request):
+    records = Record.objects.all().order_by('id')
+    return render_to_response('cms/record_list.html',
+                              {'records': records},
+                              context_instance=RequestContext(request))  # Pass the data to the template
 
-def book_edit(request, book_id=None):
-    '''書籍の編集'''
-#     return HttpResponse(u'書籍の編集')
-    if book_id:   # book_id が指定されている (修正時)
-        book = get_object_or_404(Book, pk=book_id)
-    else:         # book_id が指定されていない (追加時)
-        book = Book()
+def record_edit(request, record_id=None):
+    if record_id:   # Edit if record_id exists
+        record = get_object_or_404(Record, pk=record_id)
+    else:         # Add if record_id doesn't exist
+        record = Record()
     
     if request.method == 'POST':
-        form = BookForm(request.POST, instance=book)  # POST された request データからフォームを作成
-        if form.is_valid():    # フォームのバリデーション
-            book = form.save(commit=False)
-            book.save()
-            return redirect('cms:book_list')
-    else:    # GET の時
-        form = BookForm(instance=book)  # book インスタンスからフォームを作成
+        form = RecordForm(request.POST, instance=record)  # Create a form from posted request
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.save()
+            return redirect('cms:record_list')
+    else:
+        form = RecordForm(instance=record)  # Create a form from record instance
         
-    return render_to_response('cms/book_edit.html',
-                              dict(form=form, book_id=book_id),
+    return render_to_response('cms/record_edit.html',
+                              dict(form=form, record_id=record_id),
                               context_instance=RequestContext(request))
 
-def book_del(request, book_id):
-    '''書籍の削除'''
-#     return HttpResponse(u'書籍の削除')
-    book = get_object_or_404(Book, pk=book_id)
-    book.delete()
-    return redirect('cms:book_list')
+def record_del(request, record_id):
+    record = get_object_or_404(Record, pk=record_id)
+    record.delete()
+    return redirect('cms:record_list')
 
-# def impression_list(request, book_id):
-#     '''感想の一覧'''
-#     book = get_object_or_404(Book, pk=book_id)  # 親の書籍を読む
-#     impressions = book.impressions.all().order_by('id')  # 書籍の子供の、感想を読む
-#     return render_to_response('cms/impression_list.html',
-#                               dict(impressions=impressions, book=book),
-#                               context_instance=RequestContext(request))
-
-class ImpressionList(ListView):
-    '''感想の一覧'''
-    context_object_name='impressions'
-    template_name='cms/impression_list.html'
-    paginate_by = 2    # １ページは最大2件ずつでページングする
+class ReviewList(ListView):
+    context_object_name='reviews'
+    template_name='cms/review_list.html'
+    paginate_by = 3
 
     def get(self, request, *args, **kwargs):
-        book = get_object_or_404(Book, pk=kwargs['book_id'])  # 親の書籍を読む
-        impressions = book.impressions.all().order_by('id')   # 書籍の子供の、感想を読む
-        self.object_list = impressions
+        record = get_object_or_404(Record, pk=kwargs['record_id'])
+        reviews = record.reviews.all().order_by('id')
+        self.object_list = reviews
         
-        context = self.get_context_data(object_list=self.object_list, book=book)    
+        context = self.get_context_data(object_list=self.object_list, record=record)    
         return self.render_to_response(context)
 
-def impression_edit(request, book_id, impression_id=None):
-    '''感想の編集'''
-    book = get_object_or_404(Book, pk=book_id)  # 親の書籍を読む
-    if impression_id:   # impression_id が指定されている (修正時)
-        impression = get_object_or_404(Impression, pk=impression_id)
-    else:               # impression_id が指定されていない (追加時)
-        impression = Impression()
+def review_edit(request, record_id, review_id=None):
+    record = get_object_or_404(Record, pk=record_id)
+    if review_id:   # Edit if record_id exists
+        review = get_object_or_404(Review, pk=review_id)
+    else:               # Add if record_id doesn't exist
+        review = Review()
 
     if request.method == 'POST':
-        form = ImpressionForm(request.POST, instance=impression)  # POST された request データからフォームを作成
-        if form.is_valid():    # フォームのバリデーション
-            impression = form.save(commit=False)
-            impression.book = book  # この感想の、親の書籍をセット
-            impression.save()
-            return redirect('cms:impression_list', book_id=book_id)
+        form = ReviewForm(request.POST, instance=review)  # Create a form from posted request
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.record = record
+            review.save()
+            return redirect('cms:review_list', record_id=record_id)
     else:    # GET の時
-        form = ImpressionForm(instance=impression)  # impression インスタンスからフォームを作成
+        form = ReviewForm(instance=review)  # Create a form from record instance
         
-    return render_to_response('cms/impression_edit.html',
-                              dict(form=form, book_id=book_id, impression_id=impression_id),
+    return render_to_response('cms/review_edit.html',
+                              dict(form=form, record_id=record_id, review_id=review_id),
                               context_instance=RequestContext(request))
 
-def impression_del(request, book_id, impression_id):
-    '''感想の削除'''
-    impression = get_object_or_404(Impression, pk=impression_id)
-    impression.delete()
-    return redirect('cms:impression_list', book_id=book_id)
-
+def review_del(request, record_id, review_id):
+    review = get_object_or_404(Review, pk=review_id)
+    review.delete()
+    return redirect('cms:review_list', record_id=record_id)
