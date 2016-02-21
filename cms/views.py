@@ -62,7 +62,7 @@ def review_edit(request, record_id, review_id=None):
             review.record = record
             review.save()
             return redirect('cms:review_list', record_id=record_id)
-    else:    # GET の時
+    else:
         form = ReviewForm(instance=review)  # Create a form from record instance
         
     return render_to_response('cms/review_edit.html',
